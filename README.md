@@ -13,7 +13,8 @@
 [はこレクト紹介スライド](https://docs.google.com/presentation/d/e/2PACX-1vQ1y5bSkEQXTM50pugGuvBkvE4k9TuTEPYDNqFKFKVnOkCOjvXELXQBgnYjSemf7jWnJC6TolKoA9Vr/pub?start=false&loop=false&delayms=3000)
 
 ###  プロダクト画面
-![プロダクト画面](https://github.com/ats-kn/swift2022c/assets/108859216/e5882d49-d2e2-4eba-be00-e39887ee8f34)
+![プロダクト画面](https://github.com/ats-kn/swift2022c/assets/108859216/f03715af-fa76-4c9c-bbd4-943adbb0a2e8)
+
 
 ###  担当
 ・プロダクトデザイン  
