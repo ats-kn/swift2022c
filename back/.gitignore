@@ -1,0 +1,14 @@
+node_modules
+.DS_Store
+dist
+dist-ssr
+*.local
+.env
+__pycache__
+hacollect-eito-firebase-adminsdk-obvl5-c83291bac8.json
+midukichi-firebase-adminsdk-u0l1k-46d032d1e7.json
+orange-23e56-firebase-adminsdk-vy8ob-e0b21a6287.json
+hcl2-9d519-firebase-adminsdk-ff0xa-6df30baef8.json
+hacollectats-firebase-adminsdk-z7t78-cfca93cd40.json
+py-firebase-c914a-firebase-adminsdk-yp782-ebdc8396ae.json
+
