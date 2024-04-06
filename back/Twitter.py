@@ -106,61 +106,64 @@ def ClientInfo():
     return client
 
 # 実際にデータベースにデータを保存する関数
+# 定数の定義
+EXCLUDED_SOURCES = ["twittbot.net", "TravelRaku", "rt_10"]
+EXCLUDED_USERNAMES = ["ri_Zu_n_", "KY1225kataware", "Miyabi207Vzs72", "bonzu207", "flan_staff"]
+
 def SaveToDatabase(tweets, tweets_data, data_label):
-    if tweets_data != None:  # tweets_dataにうまくデータが入った場合
-        for tweet in tweets_data:
-            # databaseにデータを追加する
-            try:
-                if tweet.attachments is not None:  #そのツイートに画像があるか（リンクのみだった時も除外しちゃうので一旦保留）
-                    if tweet.source != "twittbot.net" and tweet.source != "TravelRaku" and tweet.source != "rt_10" :  #ここでBOTを除外する
-                        for i in range(len(tweets.includes['users'])):
-                            if tweet.author_id == tweets.includes['users'][i]['id']:
-                                if tweets.includes['users'][i]['username'] != "ri_Zu_n_" and tweets.includes['users'][i]['username'] != "KY1225kataware" and tweets.includes['users'][i]['username'] != "Miyabi207Vzs72" and  tweets.includes['users'][i]['username'] != "bonzu207" and tweets.includes['users'][i]['username'] != "flan_staff":
-                                    ref.child(str(tweet.id)).set({  # キーはツイートID
-                                        'data_label' : data_label,                                    
-                                        'date': -(tweet.created_at.timestamp()),  #float型（確認済み）
-                                        'date2': change_time_JST(tweet.created_at),
-                                        'date3': getTime(tweet.created_at.timestamp()),
-                                        # 投稿日  ISO 8601形式の投稿日時をUNIX時間に変換した。（投稿日時を秒数に変換）
-                                        'text': tweet.text.split('https://t.co/')[0],  # 投稿文
-                                        'link': 'https://twitter.com/twitter/status/' + str(tweet.id),  #投稿リンク
-                                        'good': tweet.public_metrics['like_count'],  #いいね数
-                                        'source': tweet.source,
-                                        'user': tweets.includes['users'][i]['name'],  #ユーザ名
-                                        'username': tweets.includes['users'][i]['username'],   #ユーザ名(@のやつ)
-                                        'profile_image_url': tweets.includes['users'][i]['profile_image_url'],   #プロフィール画像
-                                        'SNS_type': 'Twitter'
-                                    })
-                                    break
-                        media_ref = db.reference('/' + Key + '/' + str(tweet.id)).child('media')
-                        roop_count = 0 #その投稿のメディアの数に合わせたループ回数を保存する変数？
-                        for i in range(len(tweets.includes['media'])):  #取得してきたツイート10件に格納されたメディアのurlの数
-                            if roop_count == len(tweet.attachments['media_keys']) :  #その投稿に格納する画像や動画がなくなったら次の投稿へ
-                                break                            
-                            for j in range(len(tweet.attachments['media_keys'])): #ツイートに格納されてあるメディアのurlの数
-                                if tweets.includes['media'][i]['media_key'] == tweet.attachments['media_keys'][j]: #メディアのキーが同じだったら...
-                                    if tweets.includes['media'][i]['type'] == 'photo' :
-                                        media_ref.child('url' + str(j)).set({
-                                            'media_type': tweets.includes['media'][i]['type'], #メディアの種類
-                                            'media_url': tweets.includes['media'][i]['url']  #urlをDBに格納！全てのurlを格納できる！
-                                        })
-                                        roop_count += 1   #画像情報を格納出来たら、roopcountに+1して、その投稿の次のメディアを探す
-                                    else :
-                                        for k in range(4) :                                            
-                                            if (tweets.includes['media'][i]['variants'][k]['content_type'] == 'video/mp4') :                                                        
-                                                media_ref.child('url' + str(j)).set({
-                                                    'media_type': tweets.includes['media'][i]['type'], #メディアの種類
-                                                    'media_url': tweets.includes['media'][i]['variants'][k]['url']  #urlをDBに格納！全てのurlを格納できる！
-                                                })
-                                                roop_count += 1
-                                                break  #video/mp4タイプの動画を一つでも格納出来たら、roop_countに+1して、その投稿の次のメディアを探す
-                                        
-            except:
-                pass
-        return 'done!'
-    
-    else:  # tweets_dataにうまくデータが入らなかった場合
+    if tweets_data is None:  # tweets_dataにうまくデータが入らなかった場合
         return 'fail!'
+    
+    for tweet in tweets_data:
+        try:
+            if tweet.attachments is None or tweet.source in EXCLUDED_SOURCES:
+                continue
+            
+            for user in tweets.includes['users']:
+                if tweet.author_id == user['id'] and user['username'] not in EXCLUDED_USERNAMES:
+                    ref.child(str(tweet.id)).set({
+                        'data_label' : data_label,                                    
+                        'date': -(tweet.created_at.timestamp()),
+                        'date2': change_time_JST(tweet.created_at),
+                        'date3': getTime(twexet.created_at.timestamp()),
+                        'text': tweet.text.split('https://t.co/')[0],
+                        'link': 'https://twitter.com/twitter/status/' + str(tweet.id),
+                        'good': tweet.public_metrics['like_count'],
+                        'source': tweet.source,
+                        'user': user['name'],
+                        'username': user['username'],
+                        'profile_image_url': user['profile_image_url'],
+                        'SNS_type': 'Twitter'
+                    })
+                    break
+            
+            media_ref = db.reference('/' + Key + '/' + str(tweet.id)).child('media')
+            roop_count = 0
+            for media in tweets.includes['media']:
+                if roop_count == len(tweet.attachments['media_keys']):
+                    break
+                for j, media_key in enumerate(tweet.attachments['media_keys']):
+                    if media['media_key'] == media_key:
+                        if media['type'] == 'photo':
+                            media_ref.child('url' + str(j)).set({
+                                'media_type': media['type'],
+                                'media_url': media['url']
+                            })
+                            roop_count += 1
+                        else:
+                            for variant in media['variants']:
+                                if variant['content_type'] == 'video/mp4':
+                                    media_ref.child('url' + str(j)).set({
+                                        'media_type': media['type'],
+                                        'media_url': variant['url']
+                                    })
+                                    roop_count += 1
+                                    break
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            continue
+
+    return 'done!'
 
 # 「函館」のテキストが含まれる投稿を最新順で取得してくる関数
 def SearchTweets(search, tweet_max, client):
